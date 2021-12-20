@@ -40,9 +40,7 @@ export default class Radio {
     }
 
     console.log(this.eles)
-
     this.renderHtml(this.container)
-
 
     this.init()
   }
@@ -66,6 +64,9 @@ export default class Radio {
         this.eles.totalTime.innerHTML = '00:00'
         time.appendChild(this.eles.totalTime)
         center.appendChild(time)
+      }
+      if (this.eles.currentTitle) {
+        center.appendChild(this.eles.currentTitle)
       }
       middle.appendChild(center)
       voiceController.appendChild(middle)
@@ -213,6 +214,7 @@ export default class Radio {
       case 'play':
       case 'pause':
         if (event.type == "play") {
+          this.eles.currentTitle.innerHTML = this._playlist[this._currentIndex].live ? '正在直播:' + this._playlist[this._currentIndex].title : '正在播放:' + this._playlist[this._currentIndex].title
           if (this._firstPlayed == false) {
             // 第一次播放
             this.eles.totalTime.innerHTML = this._currentDuration
@@ -223,10 +225,10 @@ export default class Radio {
               // 不是循环播放
               console.log('不是循环播放')
               if (this._currentIndex == 0) {
-                this.eles.nextBtn.classList.remove('voice-btn-disable')
+                this.eles.prevBtn.classList.add('voice-btn-disable')
               } else
               if (this._currentIndex == this._playlist.length -1) {
-                this.eles.prevBtn.classList.remove('voice-btn-disable')
+                this.eles.nextBtn.classList.add('voice-btn-disable')
               } else {
                 this.eles.nextBtn.classList.remove('voice-btn-disable')
                 this.eles.prevBtn.classList.remove('voice-btn-disable')

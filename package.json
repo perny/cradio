@@ -1,8 +1,9 @@
 {
   "name": "cradio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "audio player support m3u8/mp3",
-  "main": "dist/cRadio.js",
+  "main": "dist/js/cradio.js",
+  "style": "dist/css/cradio.css",
   "scripts": {
     "build": "webpack"
   },
