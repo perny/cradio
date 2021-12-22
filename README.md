@@ -55,3 +55,17 @@ radio.append([
 ```javascript
 radio.destroy()
 ```
+- reload CRadio
+```javascript
+radio.reload([
+  {
+    "title": "audio title1",
+    "url": "audio url1",
+    "live": true/false
+  },
+  {
+    "title": "audio title2",
+    "url": "audio url2",
+    "live": true/false
+  }
+])

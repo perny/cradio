@@ -10,9 +10,9 @@ export default class Radio {
     this._hls = null;
     this._firstPlayed = false;
     this._currentDuration = '';
-    this._url = '';
+    this._url = null;
+    this._lastUrl = null;
     this._playlist = null;
-    this._lastIndex = null;
     this._currentDistance = 0;
     this._move = false;
     this._x = 0;
@@ -75,6 +75,8 @@ export default class Radio {
     if (this.eles.playBtn || this.eles.prevBtn || this.eles.nextBtn) {
       var left = createDom('.voice-left')
       if (this.eles.nextBtn || this.eles.prevBtn) {
+        this.eles.prevBtn.classList.add('voice-btn-disable')
+        this.eles.nextBtn.classList.add('voice-btn-disable')
         left.appendChild(this.eles.prevBtn)
         left.appendChild(this.eles.playBtn)
         left.appendChild(this.eles.nextBtn)
@@ -114,21 +116,13 @@ export default class Radio {
       source.connect(this._audioCtx.destination);
     }
 
-    if (this.MEDIA.canPlayType('application/vnd.apple.mpegurl')) {
-      // 浏览器默认支持m3u8
-      console.log("默认支持m3u8")
-    } else if (Hls.isSupported()) {
-      // 支持hls
-      this._hls = new Hls({
-        debug: false
-      });
-      this._hls.attachMedia(this.MEDIA);
-      this._hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-        console.log('已经绑定了');
-      });
-    } else {
-      console.log('请升级您的浏览器')
-    }
+    this._hls = new Hls({
+      debug: false
+    });
+    this._hls.attachMedia(this.MEDIA);
+    this._hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+      console.log('已经绑定了');
+    });
 
     this.bindDOM()
 
@@ -145,6 +139,7 @@ export default class Radio {
     this.pause()
     if (e.indexOf(".m3u8") <= 1) {
       // 不是m3u8格式的
+      this._url = e
       this.MEDIA.src = e,
       this.MEDIA.load()
     } else {
@@ -156,26 +151,23 @@ export default class Radio {
     }
     isIE() || this._audioCtx.resume()
 
-    /*
-    if(this._playlist[this._currentIndex].live){
-      // 直播
-      this.MEDIA.removeEventListener('loadedmetadata', this.audioEvents.bind(this))
-      this.MEDIA.removeEventListener('timeupdate', this.audioEvents.bind(this))
-      this.eles.totalTime.innerHTML = '00:00';
-    } else {
-      // 避免重复重新绑定
-      this.MEDIA.addEventListener('loadedmetadata', this.audioEvents.bind(this))
-      this.MEDIA.addEventListener('timeupdate', this.audioEvents.bind(this))
-    }
-    */
   }
 
   load(e) {
+    console.log('load')
     e.length > 0 && (this._playlist = [].concat(e),
     this._currentIndex = 0,
     this._load(this._playlist[this._currentIndex].url))
+  }
 
-    
+  reload(e){
+    if (this._isPlay) {
+      this.pause()
+    }
+    setTimeout(() => {
+      this._hls.trigger(Hls.Events.DESTROYING)
+      this.load(e)
+    }, 0);
   }
 
   loadSource(e) {
@@ -218,33 +210,35 @@ export default class Radio {
           if (this._firstPlayed == false) {
             // 第一次播放
             this.eles.totalTime.innerHTML = this._currentDuration
-            if (this.options.loop) {
-              this.eles.nextBtn.classList.remove('voice-btn-disable')
-              this.eles.prevBtn.classList.remove('voice-btn-disable')
-            } else {
-              // 不是循环播放
-              console.log('不是循环播放')
-              if (this._currentIndex == 0) {
-                this.eles.prevBtn.classList.add('voice-btn-disable')
-              } else
-              if (this._currentIndex == this._playlist.length -1) {
-                this.eles.nextBtn.classList.add('voice-btn-disable')
-              } else {
-                this.eles.nextBtn.classList.remove('voice-btn-disable')
-                this.eles.prevBtn.classList.remove('voice-btn-disable')
-              }
-            }
-            
             this.eles.prevBtn.addEventListener('click', this.prev.bind(this))
             this.eles.nextBtn.addEventListener('click', this.next.bind(this))
 
             this._firstPlayed = true
 
           }
+
+          if (this.options.loop) {
+            this.eles.nextBtn.classList.remove('voice-btn-disable')
+            this.eles.prevBtn.classList.remove('voice-btn-disable')
+          } else {
+            // 不是循环播放
+            console.log('不是循环播放')
+            if (this._currentIndex == 0) {
+              this.eles.prevBtn.classList.add('voice-btn-disable')
+              this.eles.nextBtn.classList.remove('voice-btn-disable')
+            } else
+            if (this._currentIndex == this._playlist.length -1) {
+              this.eles.nextBtn.classList.add('voice-btn-disable')
+              this.eles.prevBtn.classList.remove('voice-btn-disable')
+            } else {
+              this.eles.nextBtn.classList.remove('voice-btn-disable')
+              this.eles.prevBtn.classList.remove('voice-btn-disable')
+            }
+          }
           
           this.eles.playBtn.classList.add('voice-btn-pause')
           this._isPlay = true
-          
+          this._lastUrl = this._playlist[this._currentIndex].url
         } else {
           this.eles.playBtn.classList.remove('voice-btn-pause')
           this._isPlay = false
@@ -325,10 +319,10 @@ export default class Radio {
   }
 
   stopLoad(){
-    this._hls.networkControllers.forEach((function(e) {
+    this._hls.networkControllers.forEach(function(e) {
             e.stopLoad()
         }
-    ))
+    )
   }
 
   append(param){
@@ -350,17 +344,36 @@ export default class Radio {
   prev() {
     if (this._playlist.length > 0) {
       if (this.options.loop) {
-        this._currentIndex = (this._currentIndex + this._playlist.length - 1) % this._playlist.length,
-        this._load(this._playlist[this._currentIndex].url),
-        this.play()
+
+        if (this._isPlay) {
+          this.pause()
+        }
+
+        setTimeout(() => {
+          this._hls.trigger(Hls.Events.DESTROYING)
+          this._currentIndex = (this._currentIndex + this._playlist.length - 1) % this._playlist.length,
+          this._load(this._playlist[this._currentIndex].url),
+          this.play()
+        }, 0);
+        
+        
       } else {
         if (this._currentIndex > 0) {
           if (this._currentIndex == this._playlist.length - 1) {
             this.eles.nextBtn.classList.remove('voice-btn-disable')
           }
-          this._currentIndex = this._currentIndex - 1
-          this._load(this._playlist[this._currentIndex].url),
-          this.play()
+
+          if (this._isPlay) {
+            this.pause()
+          }
+          setTimeout(() => {
+            this._hls.trigger(Hls.Events.DESTROYING)
+            this._currentIndex = this._currentIndex - 1
+            this._load(this._playlist[this._currentIndex].url),
+            this.play()
+          }, 0);
+          
+
           if (this._currentIndex == 0) {
             this.eles.prevBtn.classList.add('voice-btn-disable')
           }
@@ -374,9 +387,16 @@ export default class Radio {
     if (this._playlist.length > 0) {
       if (this.options.loop) {
         // 循环
-        this._currentIndex = (this._currentIndex + 1) % this._playlist.length,
-        this._load(this._playlist[this._currentIndex].url),
-        this.play()
+        if (this._isPlay) {
+          this.pause()
+        }
+        setTimeout(() => {
+          this._hls.trigger(Hls.Events.DESTROYING);
+          this._currentIndex = (this._currentIndex + 1) % this._playlist.length;
+          this._load(this._playlist[this._currentIndex].url);
+          this.play();
+        }, 0);
+        
       } else {
         // 不循环
         console.log("连续但是不循环")
@@ -384,10 +404,16 @@ export default class Radio {
           if (this._currentIndex == 0) {
             this.eles.prevBtn.classList.remove('voice-btn-disable')
           }
-          this._currentIndex = this._currentIndex + 1
-          console.log('当前index', this._currentIndex)
-          this._load(this._playlist[this._currentIndex].url),
-          this.play()
+          if (this._isPlay) {
+            this.pause()
+          }
+          setTimeout(() => {
+            this._hls.trigger(Hls.Events.DESTROYING);
+            this._currentIndex = this._currentIndex + 1;
+            this._load(this._playlist[this._currentIndex].url);
+            this.play();
+          }, 0);
+          
           if (this._currentIndex == this._playlist.length - 1) {
             this.eles.nextBtn.classList.add('voice-btn-disable')
           }
@@ -399,25 +425,40 @@ export default class Radio {
   jump(num) {
     console.log('jump', num)
     console.log('jump', this._currentIndex)
-    
-    if (this._currentIndex == num) {
-      if (this._firstPlayed == false) {
-        // 第一次播放
+
+    if (this._firstPlayed == false) {
+      // 第一次播放
+      setTimeout(() => {
         this._currentIndex = num,
         this._load(this._playlist[this._currentIndex].url)
         this.play()
-      } else {
-        if (this._isPlay) {
-          // 正在播放，需要暂停
-          this.pause()
-        } else {
-          this.play()
-        }
-      }
+      }, 0);
     } else {
-      this._currentIndex = num,
-      this._load(this._playlist[this._currentIndex].url)
-      this.play()
+      setTimeout(() => {
+        console.log('this._playlist[this._currentIndex].url', this._playlist[this._currentIndex].url)
+        console.log('_lastUrl', this._lastUrl)
+        if (this._currentIndex == num && this._playlist[this._currentIndex].url == this._lastUrl) {
+          // 真正的同一个
+          if (this._isPlay) {
+            // 正在播放，需要暂停
+            this.pause()
+          } else {
+            this.play()
+          }
+        } else {
+          if (this._isPlay) {
+            this.pause()
+          }
+
+          setTimeout(() => {
+            this._hls.trigger(Hls.Events.DESTROYING)
+            this._currentIndex = num,
+            this._load(this._playlist[this._currentIndex].url)
+            this.play()
+          }, 0)
+          
+        }
+      }, 0);
     }
   }
 
