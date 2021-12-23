@@ -1,5 +1,5 @@
 import Hls from 'hls.js';
-import { thisTypeOf, timeStyle, dom, isIE, isiPhone, createDom } from './utils'
+import { thisTypeOf, timeStyle, prepend, isIE, isiPhone, createDom } from './utils'
 
 export default class Radio {
   constructor(container, options) {
@@ -60,7 +60,8 @@ export default class Radio {
         var time = createDom('.voice-time')
         time.innerHTML = '/'
         this.eles.currentTime.innerHTML = '00:00'
-        time.prepend(this.eles.currentTime)
+        //time.prepend(this.eles.currentTime)
+        prepend(time, this.eles.currentTime)
         this.eles.totalTime.innerHTML = '00:00'
         time.appendChild(this.eles.totalTime)
         center.appendChild(time)
@@ -115,6 +116,24 @@ export default class Radio {
       var source = this._audioCtx.createMediaElementSource(this.MEDIA);
       source.connect(this._audioCtx.destination);
     }
+
+    /*
+    if (this.MEDIA.canPlayType('application/vnd.apple.mpegurl')) {
+      // 浏览器默认支持m3u8
+      console.log("默认支持m3u8")
+    } else if (Hls.isSupported()) {
+      // 支持hls
+      this._hls = new Hls({
+        debug: false
+      });
+      this._hls.attachMedia(this.MEDIA);
+      this._hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+        console.log('已经绑定了');
+      });
+    } else {
+      console.log('请升级您的浏览器')
+    }
+    */
 
     this._hls = new Hls({
       debug: false

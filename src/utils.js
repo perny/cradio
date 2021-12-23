@@ -32,3 +32,12 @@ export function isIE() {
 export function isiPhone() {
   return (navigator.userAgent.indexOf("iPhone") > 0 || navigator.userAgent.indexOf("iPad") > 0) && navigator.userAgent.indexOf("Safari")
 }
+
+export function prepend (A, B) {
+  if (A.firstChild) {
+      A.insertBefore(B, A.firstChild);
+  }
+  else {
+      A.appendChild(B);
+  }
+}
