@@ -1,6 +1,6 @@
 {
   "name": "cradio",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "description": "audio player support m3u8/mp3",
   "main": "dist/js/cradio.js",
   "style": "dist/css/cradio.css",
@@ -36,7 +36,8 @@
   },
   "dependencies": {
     "@babel/runtime-corejs3": "^7.16.5",
-    "hls.js": "^1.1.1"
+    "hls.js": "^1.1.1",
+    "promise-polyfill": "8.2.1"
   },
   "browserslist": [
     "> 1% in CN",

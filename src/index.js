@@ -1,100 +1,108 @@
 import Hls from 'hls.js';
+import Promise from 'promise-polyfill';
 import { thisTypeOf, timeStyle, prepend, isIE, isiPhone, createDom } from './utils'
 
-export default class Radio {
+
+export default class Radio{
   constructor(container, options) {
-    this.container = document.querySelector(container)
-    this.options = options;
-    this.MEDIA = null;
-    this._audioCtx = null;
-    this._hls = null;
+    this._container = document.querySelector(container)
+    this._options = options;
+    
+    this.hls = null
+    this.audio = document.createElement("audio")
+    this.audio.autoplay = true
+    this.audio.crossOrigin = 'anonymous';
+
+
     this._firstPlayed = false;
     this._currentDuration = '';
-    this._url = null;
     this._lastUrl = null;
     this._playlist = null;
     this._currentDistance = 0;
     this._move = false;
     this._x = 0;
     this._volumeProgressWidth = 0;
+    this._currentIndex = null;
+    this._current = null
 
-    this.eles = {};
+    this._eles = {};
 
     
     
 
-    for (const [key, value] of Object.entries(this.options.controls)) {
-      this.eles[key] = createDom(value)
+    for (const [key, value] of Object.entries(this._options.controls)) {
+      this._eles[key] = createDom(value)
       if (key == 'volumeProgress') {
-        this.eles.volumeProgressInner = createDom('.voice-volume-progress-inner');
-        this.eles.volumeHand = createDom('.voice-volume-progress-handle');
-        this.eles.volumeProgressInner.appendChild(this.eles.volumeHand)
-        this.eles[key].appendChild(this.eles.volumeProgressInner)
+        this._eles.volumeProgressInner = createDom('.voice-volume-progress-inner');
+        this._eles.volumeHand = createDom('.voice-volume-progress-handle');
+        this._eles.volumeProgressInner.appendChild(this._eles.volumeHand)
+        this._eles[key].appendChild(this._eles.volumeProgressInner)
       }
       if (key == 'audioProgress') {
-        this.eles.audioProgressInner = createDom('.voice-audio-progress-inner')
-        this.eles.audioProgressHand = createDom('.voice-audio-progress-handle')
-        this.eles.audioProgressInner.appendChild(this.eles.audioProgressHand)
-        this.eles[key].appendChild(this.eles.audioProgressInner)
+        this._eles.audioProgressInner = createDom('.voice-audio-progress-inner')
+        this._eles.audioProgressHand = createDom('.voice-audio-progress-handle')
+        this._eles.audioProgressInner.appendChild(this._eles.audioProgressHand)
+        this._eles[key].appendChild(this._eles.audioProgressInner)
       }
     }
 
-    console.log(this.eles)
-    this.renderHtml(this.container)
+    console.log(this)
+    this.renderHtml(this._container)
 
-    this.init()
+    this.bindDOM();
+    this._volumeProgressWidth = this._eles['volumeProgress'].clientWidth;
   }
 
   renderHtml(dom){
     var voiceDom = createDom('.voice')
     var voiceController = createDom('.voice-controller')
 
-    if (this.eles.totalTime || this.eles.currentTime || this.eles.audioProgress) {
+    if (this._eles.totalTime || this._eles.currentTime || this._eles.audioProgress) {
       var middle = createDom('.voice-middle')
       var center = createDom('.voice-center')
 
-      if (this.eles.audioProgress) {
-        center.appendChild(this.eles.audioProgress)
+      if (this._eles.audioProgress) {
+        center.appendChild(this._eles.audioProgress)
       }
-      if (this.eles.totalTime || this.eles.currentTime) {
+      if (this._eles.totalTime || this._eles.currentTime) {
         var time = createDom('.voice-time')
         time.innerHTML = '/'
-        this.eles.currentTime.innerHTML = '00:00'
-        //time.prepend(this.eles.currentTime)
-        prepend(time, this.eles.currentTime)
-        this.eles.totalTime.innerHTML = '00:00'
-        time.appendChild(this.eles.totalTime)
+        this._eles.currentTime.innerHTML = '00:00'
+        prepend(time, this._eles.currentTime)
+        this._eles.totalTime.innerHTML = '00:00'
+        time.appendChild(this._eles.totalTime)
         center.appendChild(time)
       }
-      if (this.eles.currentTitle) {
-        center.appendChild(this.eles.currentTitle)
+      if (this._eles.currentTitle) {
+        center.appendChild(this._eles.currentTitle)
       }
       middle.appendChild(center)
       voiceController.appendChild(middle)
     }
 
-    if (this.eles.playBtn || this.eles.prevBtn || this.eles.nextBtn) {
+    if (this._eles.playBtn || this._eles.prevBtn || this._eles.nextBtn) {
       var left = createDom('.voice-left')
-      if (this.eles.nextBtn || this.eles.prevBtn) {
-        this.eles.prevBtn.classList.add('voice-btn-disable')
-        this.eles.nextBtn.classList.add('voice-btn-disable')
-        left.appendChild(this.eles.prevBtn)
-        left.appendChild(this.eles.playBtn)
-        left.appendChild(this.eles.nextBtn)
+      if (this._eles.nextBtn || this._eles.prevBtn) {
+        this._eles.prevBtn.classList.add('voice-btn-disable')
+        this._eles.nextBtn.classList.add('voice-btn-disable')
+        this._eles.playBtn.classList.add('voice-btn-disable')
+        left.appendChild(this._eles.prevBtn)
+        left.appendChild(this._eles.playBtn)
+        left.appendChild(this._eles.nextBtn)
       } else {
-        left.appendChild(this.eles.playBtn)
+        left.appendChild(this._eles.playBtn)
       }
       voiceController.appendChild(left)
     }
     
-    if (this.eles.volumeProgress || this.eles.muteBtn) {
+    if (this._eles.volumeProgress || this._eles.muteBtn) {
       var right = createDom('.voice-right')
       var volume = createDom('.voice-volume')
-      if (this.eles.muteBtn) {
-        volume.appendChild(this.eles.muteBtn)
+      if (this._eles.muteBtn) {
+        volume.appendChild(this._eles.muteBtn)
       }
-      if (this.eles.volumeProgress) {
-        volume.appendChild(this.eles.volumeProgress)
+      if (this._eles.volumeProgress) {
+        volume.appendChild(this._eles.volumeProgress)
       }
       right.appendChild(volume)
       voiceController.appendChild(right)
@@ -103,204 +111,152 @@ export default class Radio {
     voiceDom.appendChild(voiceController)
 
     dom.appendChild(voiceDom)
-
   }
 
-  init() {
-    this._volumeProgressWidth = this.eles['volumeProgress'].clientWidth
-
-    this.MEDIA = new Audio();
-    this.MEDIA.crossOrigin = 'anonymous';
-    if (window.AudioContext || window.webkitAudioContext) {
-      this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      var source = this._audioCtx.createMediaElementSource(this.MEDIA);
-      source.connect(this._audioCtx.destination);
-    }
-
-    /*
-    if (this.MEDIA.canPlayType('application/vnd.apple.mpegurl')) {
-      // 浏览器默认支持m3u8
-      console.log("默认支持m3u8")
-    } else if (Hls.isSupported()) {
-      // 支持hls
-      this._hls = new Hls({
-        debug: false
-      });
-      this._hls.attachMedia(this.MEDIA);
-      this._hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-        console.log('已经绑定了');
-      });
+  _load(url) {
+    if (url.indexOf(".m3u8") <= 1) {
+      this.audio.src = url;
+      this.audio.load();
     } else {
-      console.log('请升级您的浏览器')
+      this._loadsource(url)
     }
-    */
 
-    this._hls = new Hls({
-      debug: false
-    });
-    this._hls.attachMedia(this.MEDIA);
-    this._hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      console.log('已经绑定了');
-    });
-
-    this.bindDOM()
-
-    this.MEDIA.addEventListener('play', this.audioEvents.bind(this))
-    this.MEDIA.addEventListener('pause', this.audioEvents.bind(this))
-    this.MEDIA.addEventListener('ended', this.audioEvents.bind(this))
-    this.MEDIA.addEventListener('error', this.audioEvents.bind(this))
-    this.MEDIA.addEventListener('volumechange', this.audioEvents.bind(this))
-    this.MEDIA.addEventListener('loadedmetadata', this.audioEvents.bind(this))
-    this.MEDIA.addEventListener('timeupdate', this.audioEvents.bind(this))
-  }
-
-  _load(e) {
-    this.pause()
-    if (e.indexOf(".m3u8") <= 1) {
-      // 不是m3u8格式的
-      this._url = e
-      this.MEDIA.src = e,
-      this.MEDIA.load()
-    } else {
-      isIE();
-      this._hls.trigger(Hls.Events.MEDIA_ATTACHING, {
-        media: this.MEDIA
-      });
-      this.loadSource(e)
-    }
-    isIE() || this._audioCtx.resume()
-
+    this.addAudioEventListeners(this.audio)
   }
 
   load(e) {
     console.log('load')
-    e.length > 0 && (this._playlist = [].concat(e),
-    this._currentIndex = 0,
-    this._load(this._playlist[this._currentIndex].url))
+    if (e.length > 0) {
+      this._playlist = [].concat(e)
+      //this._currentIndex = 0
+      //this._current = this._playlist[this._currentIndex]
+    }
   }
 
   reload(e){
     if (this._isPlay) {
       this.pause()
     }
-    setTimeout(() => {
-      this._hls.trigger(Hls.Events.DESTROYING)
-      this.load(e)
-    }, 0);
+    this.load(e)
   }
 
-  loadSource(e) {
-    this._url = e,
-    isiPhone() && (this.MEDIA.src = e),
-    this._hls.trigger(Hls.Events.MANIFEST_LOADING, {
-        url: e
-    })
-  }
-
-  startLoad(e){
-    void 0 === e && (e = -1),
-    this._hls.networkControllers.forEach(function(t){
-      t.startLoad(e)
-    })
-  }
-
+  _loadsource(url) {
+    if (isiPhone()) {
+      this.audio.src = url
+    } else {
+      if(this.hls) {
+        this.hls.destroy()
+        this.hls = null
+      }
   
+      this.hls = new Hls({
+        debug: false
+      })
+      this.hls.loadSource(url)
+      this.hls.attachMedia(this.audio)
+    }
+  }
 
   audioEvents(event){
     switch (event.type) {
-      case 'loadstart':
-          this.eles.playBtn.classList.add('loading')
-          break;
       case 'loadedmetadata':
-          if (this._playlist[this._currentIndex].live){
+          if (this._current.live){
             this._currentDuration = '00:00'
           } else {
-            this._currentDuration = timeStyle(this.MEDIA.duration)
+            this._currentDuration = timeStyle(this.audio.duration)
           }
           console.log('_currentDuration', this._currentDuration)
-          if (this._firstPlayed == true) {
-            this.eles.totalTime.innerHTML = this._currentDuration
-          }
+          
+          this._eles.totalTime.innerHTML = this._currentDuration
+          this._eles.currentTitle.innerHTML = this._current.live ? '当前直播: ' + this._current.title : '当前播放: ' + this._current.title
           break;
       case 'play':
       case 'pause':
+        console.log(event.type)
         if (event.type == "play") {
-          this.eles.currentTitle.innerHTML = this._playlist[this._currentIndex].live ? '正在直播:' + this._playlist[this._currentIndex].title : '正在播放:' + this._playlist[this._currentIndex].title
           if (this._firstPlayed == false) {
             // 第一次播放
-            this.eles.totalTime.innerHTML = this._currentDuration
-            this.eles.prevBtn.addEventListener('click', this.prev.bind(this))
-            this.eles.nextBtn.addEventListener('click', this.next.bind(this))
+            this._eles.prevBtn.addEventListener('click', this.prev.bind(this))
+            this._eles.nextBtn.addEventListener('click', this.next.bind(this))
 
             this._firstPlayed = true
-
           }
 
-          if (this.options.loop) {
-            this.eles.nextBtn.classList.remove('voice-btn-disable')
-            this.eles.prevBtn.classList.remove('voice-btn-disable')
+          if (this._options.loop) {
+            this._eles.nextBtn.classList.remove('voice-btn-disable')
+            this._eles.prevBtn.classList.remove('voice-btn-disable')
           } else {
             // 不是循环播放
             console.log('不是循环播放')
             if (this._currentIndex == 0) {
-              this.eles.prevBtn.classList.add('voice-btn-disable')
-              this.eles.nextBtn.classList.remove('voice-btn-disable')
+              this._eles.prevBtn.classList.add('voice-btn-disable')
+              this._eles.nextBtn.classList.remove('voice-btn-disable')
             } else
             if (this._currentIndex == this._playlist.length -1) {
-              this.eles.nextBtn.classList.add('voice-btn-disable')
-              this.eles.prevBtn.classList.remove('voice-btn-disable')
+              this._eles.nextBtn.classList.add('voice-btn-disable')
+              this._eles.prevBtn.classList.remove('voice-btn-disable')
             } else {
-              this.eles.nextBtn.classList.remove('voice-btn-disable')
-              this.eles.prevBtn.classList.remove('voice-btn-disable')
+              this._eles.nextBtn.classList.remove('voice-btn-disable')
+              this._eles.prevBtn.classList.remove('voice-btn-disable')
             }
           }
           
-          this.eles.playBtn.classList.add('voice-btn-pause')
+          this._eles.playBtn.classList.add('voice-btn-pause')
           this._isPlay = true
-          this._lastUrl = this._playlist[this._currentIndex].url
+          this._lastUrl = this._current.url
         } else {
-          this.eles.playBtn.classList.remove('voice-btn-pause')
+          this._eles.playBtn.classList.remove('voice-btn-pause')
           this._isPlay = false
         }
 
-        this.options.watchState && typeof this.options.watchState == 'function' ? this.options.watchState({
-          currentIndex: this._currentIndex,
+        this._options.watchState && typeof this._options.watchState == 'function' ? this._options.watchState({
+          ...this._current,
           isPlay: this._isPlay,
-          live: this._playlist[this._currentIndex].live
+          currentIndex: this._currentIndex
         }) : null;
 
         break;
       case 'ended':
-        if (this.options.continuous) {
+        if (this._options.continuous) {
           // 连续
           this.next()
         }
         break;
+      case 'playing':
+        console.log('playing')
+        break;
       case 'volumechange':
           var currentVolume = this.getVolume()
+          console.log('currentVolume', currentVolume)
           if (currentVolume == 0) {
-              this.eles.muteBtn.classList.add('voice-btn-muted')
-              this.eles.volumeProgressInner.style.width = 0
+              this._eles.muteBtn.classList.add('voice-btn-muted')
+              this._eles.volumeProgressInner.style.width = 0
           } else {
-              this.eles.muteBtn.classList.remove('voice-btn-muted')
-              this.eles.volumeProgressInner.style.width = currentVolume * 100 + '%'
+              this._eles.muteBtn.classList.remove('voice-btn-muted')
+              this._eles.volumeProgressInner.style.width = currentVolume * 100 + '%'
           }
           break;
       case 'timeupdate':
-        if (this._playlist[this._currentIndex].live) {
-          this.eles.currentTime.innerHTML = '00:00'
-          this.eles.audioProgressInner.style.width = "0%"
+        if (this._current.live) {
+          this._eles.currentTime.innerHTML = '00:00'
+          this._eles.audioProgressInner.style.width = "0%"
         } else {
-          this.eles.currentTime.innerHTML = timeStyle(this.MEDIA.currentTime)
-          this.eles.audioProgressInner.style.width = this.MEDIA.currentTime / this.MEDIA.duration * 100 + "%"
+          this._eles.currentTime.innerHTML = timeStyle(this.audio.currentTime)
+          this._eles.audioProgressInner.style.width = this.audio.currentTime / this.audio.duration * 100 + "%"
         }
         
-          break;
+        break;
       case 'error':
-          alert('音频加载错误！')
-          break;
+        console.log('error', error)
+        alert('音频加载错误！')
+        break;
       case 'canplay':
-        this.eles.playBtn.classList.remove('loading')
+      case 'canplaythrough':
+        this._eles.playBtn.classList.remove('voice-btn-disable')
+        console.log(event.type)
+        break;
+      case 'durationchange':
+        console.log('durationchange')
         break;
       default:
           break
@@ -308,52 +264,73 @@ export default class Radio {
   }
 
   playStop(e) {
-    if (this._isPlay === true) {
-      this.pause()
-    } else {
-      if (this._firstPlayed === false) {
-        var that = this;
-        this._audioCtx.resume().then(() => {
-          that.play()
-        });
+
+    if (this._current) {
+      if (this._isPlay) {
+        this.pause()
       } else {
         this.play()
       }
     }
-    return false
   };
 
   pause(){
-    if (this.MEDIA) {
-      isIE()
-      this.MEDIA.pause()
+    if (this.audio) {
+      isIE();
+      this.audio.pause();
     }
-    this.stopLoad()
+    if (this.hls) {
+      this.hls.stopLoad();
+    }
   }
 
   play() {
-    isIE(),
-    this.startLoad(),
-    this.MEDIA && this.MEDIA.play()
+    isIE();
+    this.hls && this.hls.startLoad();
+    this.audio && this.audio.play();
   }
 
-  stopLoad(){
-    this._hls.networkControllers.forEach(function(e) {
-            e.stopLoad()
-        }
-    )
+  addAudioEventListeners(audio){
+    audio.removeEventListener('play', this.audioEvents.bind(this))
+    audio.removeEventListener('pause', this.audioEvents.bind(this))
+    audio.removeEventListener('ended', this.audioEvents.bind(this))
+    audio.removeEventListener('error', this.audioEvents.bind(this))
+    audio.removeEventListener('volumechange', this.audioEvents.bind(this))
+    audio.removeEventListener('loadedmetadata', this.audioEvents.bind(this))
+    audio.removeEventListener('loadeddata', this.audioEvents.bind(this))
+    audio.removeEventListener('timeupdate', this.audioEvents.bind(this))
+
+    audio.removeEventListener('canplay', this.audioEvents.bind(this));
+    audio.removeEventListener('playing', this.audioEvents.bind(this));
+    audio.removeEventListener('canplaythrough', this.audioEvents.bind(this));
+    audio.removeEventListener('durationchange', this.audioEvents.bind(this));
+
+
+    audio.addEventListener('play', this.audioEvents.bind(this))
+    audio.addEventListener('pause', this.audioEvents.bind(this))
+    audio.addEventListener('ended', this.audioEvents.bind(this))
+    audio.addEventListener('error', this.audioEvents.bind(this))
+    audio.addEventListener('volumechange', this.audioEvents.bind(this))
+    audio.addEventListener('loadedmetadata', this.audioEvents.bind(this))
+    audio.addEventListener('loadeddata', this.audioEvents.bind(this))
+    audio.addEventListener('timeupdate', this.audioEvents.bind(this))
+
+    audio.addEventListener('canplay', this.audioEvents.bind(this));
+    audio.addEventListener('playing', this.audioEvents.bind(this));
+    audio.addEventListener('canplaythrough', this.audioEvents.bind(this));
+    audio.addEventListener('durationchange', this.audioEvents.bind(this));
   }
 
   append(param){
     if(thisTypeOf(param) == '[object Array]') {
-      if (this._currentIndex == this._playlist.length - 1 && this.options.loop == false) {
-        this.eles.nextBtn.classList.remove('voice-btn-disable')
+      if (this._currentIndex == this._playlist.length - 1 && this._options.loop == false) {
+        this._eles.nextBtn.classList.remove('voice-btn-disable')
       }
       this._playlist = this._playlist.concat(param)
     }
     if (thisTypeOf(param) == '[object Object]') {
-      if (this._currentIndex == this._playlist.length - 1 && this.options.loop == false) {
-        this.eles.nextBtn.classList.remove('voice-btn-disable')
+      if (this._currentIndex == this._playlist.length - 1 && this._options.loop == false) {
+        this._eles.nextBtn.classList.remove('voice-btn-disable')
       }
       this._playlist.push(param)
     }
@@ -362,122 +339,49 @@ export default class Radio {
 
   prev() {
     if (this._playlist.length > 0) {
-      if (this.options.loop) {
-
-        if (this._isPlay) {
-          this.pause()
-        }
-
-        setTimeout(() => {
-          this._hls.trigger(Hls.Events.DESTROYING)
-          this._currentIndex = (this._currentIndex + this._playlist.length - 1) % this._playlist.length,
-          this._load(this._playlist[this._currentIndex].url),
-          this.play()
-        }, 0);
-        
-        
+      let num
+      if (this._options.loop) {
+        num = (this._currentIndex + this._playlist.length - 1) % this._playlist.length;
       } else {
-        if (this._currentIndex > 0) {
-          if (this._currentIndex == this._playlist.length - 1) {
-            this.eles.nextBtn.classList.remove('voice-btn-disable')
-          }
-
-          if (this._isPlay) {
-            this.pause()
-          }
-          setTimeout(() => {
-            this._hls.trigger(Hls.Events.DESTROYING)
-            this._currentIndex = this._currentIndex - 1
-            this._load(this._playlist[this._currentIndex].url),
-            this.play()
-          }, 0);
-          
-
-          if (this._currentIndex == 0) {
-            this.eles.prevBtn.classList.add('voice-btn-disable')
-          }
-        }
+        num = this._currentIndex - 1
       }
-      
+      this.jump(num)
     }
   }
 
   next() {
     if (this._playlist.length > 0) {
-      if (this.options.loop) {
-        // 循环
-        if (this._isPlay) {
-          this.pause()
-        }
-        setTimeout(() => {
-          this._hls.trigger(Hls.Events.DESTROYING);
-          this._currentIndex = (this._currentIndex + 1) % this._playlist.length;
-          this._load(this._playlist[this._currentIndex].url);
-          this.play();
-        }, 0);
-        
+      let num
+      if (this._options.loop) {
+        num = (this._currentIndex + 1) % this._playlist.length;
       } else {
-        // 不循环
-        console.log("连续但是不循环")
-        if (this._currentIndex < this._playlist.length - 1) {
-          if (this._currentIndex == 0) {
-            this.eles.prevBtn.classList.remove('voice-btn-disable')
-          }
-          if (this._isPlay) {
-            this.pause()
-          }
-          setTimeout(() => {
-            this._hls.trigger(Hls.Events.DESTROYING);
-            this._currentIndex = this._currentIndex + 1;
-            this._load(this._playlist[this._currentIndex].url);
-            this.play();
-          }, 0);
-          
-          if (this._currentIndex == this._playlist.length - 1) {
-            this.eles.nextBtn.classList.add('voice-btn-disable')
-          }
-        }
+        num = this._currentIndex + 1
       }
+      this.jump(num)
     }
   }
 
   jump(num) {
     console.log('jump', num)
-    console.log('jump', this._currentIndex)
+    console.log('jump', this)
 
-    if (this._firstPlayed == false) {
-      // 第一次播放
-      setTimeout(() => {
-        this._currentIndex = num,
-        this._load(this._playlist[this._currentIndex].url)
-        this.play()
-      }, 0);
-    } else {
-      setTimeout(() => {
-        console.log('this._playlist[this._currentIndex].url', this._playlist[this._currentIndex].url)
-        console.log('_lastUrl', this._lastUrl)
-        if (this._currentIndex == num && this._playlist[this._currentIndex].url == this._lastUrl) {
-          // 真正的同一个
-          if (this._isPlay) {
-            // 正在播放，需要暂停
-            this.pause()
-          } else {
-            this.play()
-          }
+    if (this._playlist[num]) {
+      if (num == this._currentIndex && this._playlist[num] == this._current) {
+        if (this._isPlay) {
+          this.pause()
         } else {
-          if (this._isPlay) {
-            this.pause()
-          }
-
-          setTimeout(() => {
-            this._hls.trigger(Hls.Events.DESTROYING)
-            this._currentIndex = num,
-            this._load(this._playlist[this._currentIndex].url)
-            this.play()
-          }, 0)
-          
+          this.play()
         }
-      }, 0);
+      } else {
+        if (this._isPlay) {
+          this.pause()
+        }
+        setTimeout(() => {
+          this._currentIndex = num;
+          this._current = this._playlist[this._currentIndex]
+          this._load(this._current.url)
+        }, 0);
+      }
     }
   }
 
@@ -502,16 +406,8 @@ export default class Radio {
         }
 
         var percent = sum / this._volumeProgressWidth
-        this.setVolume(percent)
-        // if (currentHanlder.hasClass('progress-bar_handle')) {
-        //     if (sum > audioProgressWidth) {
-        //         sum = audioProgressWidth
-        //     }
-
-        //     var percent = sum / audioProgressWidth
-        //     // 从指定的时间点开始播放
-        //     this.api.seek(this.api.media.duration * percent)
-        // }
+        console.log(percent.toFixed(2))
+        this.setVolume(percent.toFixed(2))
     }
   }
 
@@ -520,60 +416,66 @@ export default class Radio {
   }
 
   getVolume(){
-    return this.MEDIA.volume
+    return this.audio.volume
   }
 
   setVolume (number) {
-    (number >= 0 || number <= 1) && (this.MEDIA.volume = number)
+    if (number >= 0 || number <= 1){
+      console.log('number', Number(number))
+      this.audio.volume = Number(number)
+    }
   }
 
   mute(){
+    console.log('mute')
     if (this.getVolume() == 0) {
       this.setVolume(this.volume)
     } else {
+      this.volume = this.getVolume()
       this.setVolume(0)
     }
   }
 
   bindDOM(){
-    this.eles.playBtn.addEventListener('click', this.playStop.bind(this))
-    this.eles.muteBtn.addEventListener('click', this.mute.bind(this))
+    console.log('bindDOM')
+    this._eles.playBtn.addEventListener('click', this.playStop.bind(this))
+    this._eles.muteBtn.addEventListener('click', this.mute.bind(this))
     
     
-    this.eles.volumeHand.addEventListener('mousedown', this.mousedownHanlder.bind(this))
+    this._eles.volumeHand.addEventListener('mousedown', this.mousedownHanlder.bind(this))
     document.addEventListener('mousemove', this.mousemoveHanlder.bind(this))
     document.addEventListener('mouseup', this.mouseupHanlder.bind(this))
   }
 
   offBindDOM(){
-    this.eles.playBtn.removeEventListener('click', this.playStop.bind(this))
-    this.eles.muteBtn.removeEventListener('click', this.mute.bind(this))
+    this._eles.playBtn.removeEventListener('click', this.playStop.bind(this))
+    this._eles.muteBtn.removeEventListener('click', this.mute.bind(this))
     
     
-    this.eles.volumeHand.removeEventListener('mousedown', this.mousedownHanlder.bind(this))
+    this._eles.volumeHand.removeEventListener('mousedown', this.mousedownHanlder.bind(this))
     document.removeEventListener('mousemove', this.mousemoveHanlder.bind(this))
     document.removeEventListener('mouseup', this.mouseupHanlder.bind(this))
   }
 
 
   destroy() {
-    this._hls.trigger(Hls.Events.DESTROYING),
-    this.detachMedia(),
-    this._hls.coreComponents.concat(this._hls.networkControllers).forEach((function(e) {
-            e.destroy()
-        }
-    )),
-    this._url = null,
-    this._hls.removeAllListeners(),
-    this._hls.autoLevelCapping = -1
+    this.trigger(Hls.Events.DESTROYING);
+    this.detachMedia();
+    this.removeAllListeners();
+    this._autoLevelCapping = -1;
+    this.url = null;
+    this.networkControllers.forEach(function (component) {
+      return component.destroy();
+    });
+    this.networkControllers.length = 0;
+    this.coreComponents.forEach(function (component) {
+      return component.destroy();
+    });
+    this.coreComponents.length = 0;
 
     this.offBindDOM()
   }
 
-  detachMedia(){
-    this._hls.trigger(Hls.Events.MEDIA_DETACHING);
-    this.MEDIA = null
-  }
 }
 
 
