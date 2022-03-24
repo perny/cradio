@@ -2,8 +2,9 @@
   "extends": "airbnb",
   "env": {
     "node": true,
-    "jasmine": true,
-    "jquery": true
+    "browser": true,
+    "es6": true,
+    "commonjs": true
   },
   "rules": {
     "no-use-before-define": 0,
@@ -21,7 +22,7 @@
     "jsx-a11y/anchor-is-valid": ["warn", { "aspects": ["invalidHref"] }],
     "import/no-unresolved": 0,
     "import/extensions": 0,
-    "allowAfterThis": true
+    "no-underscore-dangle": "off"
   },
   "globals": {
     "browser": false,

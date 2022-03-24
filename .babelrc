@@ -1,8 +1,11 @@
 {
   "presets": [
-    ["@babel/preset-env",{
-      "debug": false
-    }]
+    [
+      "@babel/preset-env",
+      {
+        "debug": false,
+      }
+    ]
   ],
   "plugins": [
     [
