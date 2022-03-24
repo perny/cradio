@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Webpack Boilerplate Starter Template</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="Simple starter webpack 5 project template boilerplate supporting SASS/PostCSS, Babel ES7, browser syncing, code linting. Easy project setup having multiple features and developer friendly tools.">
+    <meta name="keywords" content="webpack, webpack-configuration, template, boilerplate, setup, html, css, sass, javascript">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../dist/cradio.min.css">
+    <style>
+      .current{
+        background-color: burlywood;
+      }
+      .action-btns{
+        padding: 20px 10px;
+      }
+      .action-btns span{
+        margin: 0 20px;
+        padding: 5px 10px;
+        background-color: gray;
+      }
+      .record{
+        padding-bottom: 100px;
+      }
+      #list{
+        max-height: 500px;
+        overflow: auto;
+      }
+      #live-list{
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+      #live-list .item{
+        margin: 0 20px 20px;
+      }
+      #live-list .item img{
+        display: block;
+        width: 144px;
+        height: 144px;
+      }
+      #live-list .item .name {
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="action-btns">
+        <span class="getList">异步加载点播数据</span>
+        <!-- <span class="getLive">异步加载直播数据</span> -->
+        <span class="reload">reload</span>
+      </div>
+      <div class="record">
+        <ul id="list"></ul>
+      </div>
+      <div class="live">
+        <div id="live-list"></div>
+      </div>
+      
+      <div class="voice-wrapper">
+        <div class="blank"></div>
+      </div>
+    </div>
+    <script src="../dist/cradio.min.js"></script>
+    <script src="http://upcdn.b0.upaiyun.com/libs/jquery/jquery-1.10.2.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
