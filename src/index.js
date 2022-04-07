@@ -1,7 +1,7 @@
 import './radio.scss';
 import Hls from 'hls.js/dist/hls.min.js';
 import {
-  thisTypeOf, timeStyle, prepend, isIE, isiPhone, createDom,
+  thisTypeOf, timeStyle, prepend, isIE, isiPhone, createDom, isNumber,
 } from './utils';
 
 window.Promise = window.Promise || Promise;
@@ -47,6 +47,7 @@ export default class Radio {
 
     this.bindDOM();
     this._volumeProgressWidth = this._eles.volumeProgress.clientWidth;
+    this._audioProgressWidth = this._eles.audioProgress.clientWidth;
   }
 
   renderHtml(dom) {
@@ -204,6 +205,7 @@ export default class Radio {
         // eslint-disable-next-line no-unused-expressions
         this._options.watchState && typeof this._options.watchState === 'function' ? this._options.watchState({
           ...this._current,
+          audioObj: this.audio,
           isPlay: this._isPlay,
           currentIndex: this._currentIndex,
         }) : null;
@@ -419,9 +421,20 @@ export default class Radio {
     }
   }
 
+  seek(event) {
+    const scale = Number((event.offsetX / this._audioProgressWidth).toFixed(2));
+
+    if (this._isPlay && this._current.live === false) {
+      if (isNumber(this.audio.duration)) {
+        this.audio.currentTime = this.audio.duration * scale;
+      }
+    }
+  }
+
   bindDOM() {
     this._eles.playBtn.addEventListener('click', this.playStop.bind(this));
     this._eles.muteBtn.addEventListener('click', this.mute.bind(this));
+    this._eles.audioProgress.addEventListener('click', this.seek.bind(this));
 
     this._eles.volumeHand.addEventListener('mousedown', this.mousedownHanlder.bind(this));
     document.addEventListener('mousemove', this.mousemoveHanlder.bind(this));

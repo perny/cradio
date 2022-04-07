@@ -15,6 +15,10 @@ export function timeStyle(value) {
   return res;
 }
 
+export function isNumber(value) {
+  return typeof value === 'number' && !isNaN(value);
+}
+
 export function createDom(str) {
   var ele = document.createElement('div');
   ele.className = str.substring(1);

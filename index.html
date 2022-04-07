@@ -173,7 +173,6 @@
       function watchStateHandler(states) {
         console.log('watchState', states);
         if (states.isPlay) {
-          // 正在播放
           if (states.live) {
             // 是直播
             $('.item').eq(states.currentIndex).addClass('current');
