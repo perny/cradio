@@ -1,6 +1,6 @@
 {
   "name": "cradio",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "audio player support m3u8/mp3",
   "main": "dist/cradio.min.js",
   "style": "dist/cradio.min.css",
