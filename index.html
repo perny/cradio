@@ -171,7 +171,7 @@
       });
 
       function watchStateHandler(states) {
-        console.log('watchState', states);
+        console.log('watchState', states.audioObj.currentTime);
         if (states.isPlay) {
           if (states.live) {
             // 是直播

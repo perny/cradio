@@ -427,6 +427,13 @@ export default class Radio {
     if (this._isPlay && this._current.live === false) {
       if (isNumber(this.audio.duration)) {
         this.audio.currentTime = this.audio.duration * scale;
+
+        this._options.watchState && typeof this._options.watchState === 'function' ? this._options.watchState({
+          ...this._current,
+          audioObj: this.audio,
+          isPlay: this._isPlay,
+          currentIndex: this._currentIndex,
+        }) : null;
       }
     }
   }
